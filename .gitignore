@@ -10,5 +10,5 @@ experiments/*
 models/*
 wandb/*
 */wandb/*
-
+new_training/runs/*
 logical-fallacy/*

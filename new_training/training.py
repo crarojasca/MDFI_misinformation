@@ -30,6 +30,8 @@ TEST_BATCH_SIZE = 8
 # EPOCHS = 1
 LEARNING_RATE = 1e-05
 
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
 ## Loading Components
 parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, Seq2SeqTrainingArguments))
 model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file="train.json")
@@ -50,14 +52,15 @@ model = AutoModelForSequenceClassification.from_pretrained(
     config=config,
     cache_dir=model_args.cache_dir,
 )
+model.to(device)
 model.train()
 
 ## Reading data
 data = pd.read_csv("../datasets/cards_waterloo.csv", low_memory=False)
 
-train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN)
-valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN)
-test_dataset = ClaimsData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN)
+train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, device)
+valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
+test_dataset = ClaimsData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, device)
 
 
 # Training

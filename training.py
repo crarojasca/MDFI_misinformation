@@ -16,7 +16,7 @@ from simpletransformers.classification import ClassificationModel
 from sklearn.utils.class_weight import compute_class_weight 
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 
-parser = argparse.ArgumentParser(description="Option Critic PyTorch")
+parser = argparse.ArgumentParser(description="Training SimpleTransformers Pipe")
 parser.add_argument('--dataset', default='all', help='all - cards - waterloo')
 parser.add_argument('--model_type', default='roberta', help='The type of model to use.')
 parser.add_argument('--model_name', default='roberta_large', help='The exact architecture and trained weights to use.')
@@ -29,7 +29,6 @@ if torch.cuda.is_available():
     print('There are %d GPU(s) available.' % torch.cuda.device_count())
     print('We will use GPU {}:'.format(
         torch.cuda.current_device()), torch.cuda.get_device_name(torch.cuda.current_device()))
-
 else:
     print('No GPU available, using the CPU instead.')
     device = torch.device("cpu")
