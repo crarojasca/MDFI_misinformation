@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from transformers import Seq2SeqTrainingArguments
 
 @dataclass
 class ModelArguments:
@@ -35,6 +36,7 @@ class ModelArguments:
     )
     freeze_encoder: bool = field(default=False, metadata={"help": "Whether tp freeze the encoder."})
     freeze_embeds: bool = field(default=False, metadata={"help": "Whether  to freeze the embeddings."})
+    save_name: str = field(default="best_epoch", metadata={"help":"Model saved under this name"})
 
 @dataclass
 class DataTrainingArguments:
@@ -91,6 +93,7 @@ class DataTrainingArguments:
         metadata={"help": "If only pad tokens should be ignored. This assumes that `config.pad_token_id` is defined."},
     )
 
+
 @dataclass
 class EvalArguments:
     """
@@ -111,4 +114,11 @@ class EvalArguments:
     )
     num_samples: Optional[int] = field(
         default=1, metadata={"help": "Number of decoded sequence for each input"}
+    )
+
+@dataclass
+class TrainingArguments(Seq2SeqTrainingArguments):
+    report_to: Optional[int] = field(
+        default="wandb",
+        metadata={"help": "Where the data will be logged"}
     )

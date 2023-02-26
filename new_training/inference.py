@@ -1,33 +1,50 @@
-import argparse
+import os
 import pandas as pd
 
+
 from tqdm import tqdm
+from pathlib import Path
+from accelerate import Accelerator
+from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification, HfArgumentParser
+from arguments import (
+    ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments
+)
+
 from dataset import ClaimsData
-from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 
 import torch
 from torch.utils.data import DataLoader
 
-parser = argparse.ArgumentParser(description="Training SimpleTransformers Pipe")
-parser.add_argument('--model_name', default='roberta', help='The exact architecture and trained weights to use.')
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(description="Training SimpleTransformers Pipe")
+# parser.add_argument('--model_name', default='roberta', help='The exact architecture and trained weights to use.')
+# args = parser.parse_args()
+
+parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments))
+model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file="train.json")
+model_dir = Path(training_args.output_dir).joinpath(model_args.save_name)
 
 
 MAX_LEN = 256
-BATCH_SIZE = 4
+BATCH_SIZE = 8
+MODEL_NAME = os.path.basename(training_args.output_dir)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-model_dir = f"./experiments/results/{args.model_name}/best-epoch/"
+
+print("Loading model: {}".format(model_dir))
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 model = AutoModelForSequenceClassification.from_pretrained(model_dir)
 model.to(device)
 
-print(f"Loaded model: {args.model_name}, from directory: {model_dir}")
 
-data = pd.read_csv("../datasets/cards_waterloo.csv", low_memory=False)
+data = pd.read_csv(data_args.data_dir, low_memory=False)
 dataset = ClaimsData(data, tokenizer=tokenizer, max_len=MAX_LEN, device=device, eval=True)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+# # accelerator = Accelerator()
+# # model, dataloader = accelerator.prepare(
+# #     model, dataloader
+# # )
 
 predictions = []
 scores = []
@@ -38,7 +55,7 @@ for batch in tqdm(dataloader):
     predictions += prediction.tolist()
     scores += score.tolist()
 
-data[f"{args.model_name}_pred"] = predictions
-data[f"{args.model_name}_proba"] = scores
+data[f"{MODEL_NAME}_pred"] = predictions
+data[f"{MODEL_NAME}_proba"] = scores
 
-data.to_csv("../datasets/cards_waterloo.csv", index=False)
+data.to_csv(data_args.data_dir, index=False)

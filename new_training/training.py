@@ -18,7 +18,10 @@ from tqdm import tqdm
 from pathlib import Path
 
 from dataset import ClaimsData
-from arguments import ModelArguments, DataTrainingArguments, EvalArguments
+from metrics import compute_metrics
+from arguments import (
+    ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments
+)
 
 writer = SummaryWriter("runs/exp1")
 
@@ -33,7 +36,7 @@ LEARNING_RATE = 1e-05
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 ## Loading Components
-parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, Seq2SeqTrainingArguments))
+parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments))
 model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file="train.json")
 
 config = AutoConfig.from_pretrained(
@@ -56,7 +59,7 @@ model.to(device)
 model.train()
 
 ## Reading data
-data = pd.read_csv("../datasets/cards_waterloo.csv", low_memory=False)
+data = pd.read_csv(data_args.data_dir, low_memory=False)
 
 train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, device)
 valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
@@ -69,8 +72,9 @@ trainer = Trainer(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=valid_dataset,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
 )
 
 trainer.train()
-trainer.save_model(Path(training_args.output_dir).joinpath("best-epoch")) #save best epoch
+trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch
