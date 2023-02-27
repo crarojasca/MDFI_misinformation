@@ -26,7 +26,8 @@ else:
 
 # FILES
 ## Input File
-data_file = "datasets/omm_export_tweets_01-06-2022.csv"
+data_file = "datasets/omm_export_tweets_01-06-2022.csv" ## Hamburg
+
 ## Output File
 predictions_file = "datasets/predictions"
 

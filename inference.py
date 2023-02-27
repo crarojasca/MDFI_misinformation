@@ -24,6 +24,8 @@ from sklearn.metrics import (
 from IPython.display import display, Markdown, Latex
 
 
+FILE = "datasets/cards_waterloo_augmented.csv"
+
 if torch.cuda.is_available():    
     # Tell PyTorch to use the GPU.    
     device = torch.device("cuda")
@@ -37,14 +39,14 @@ else:
     device = torch.device("cpu")
 
 ## Load Data
-data = pd.read_csv("datasets/hamburg_1000_sample.csv", low_memory=False)
+data = pd.read_csv(FILE, low_memory=False)
 
 ## Preprocess Texts
-data["text"] = preprocess_text(data["fulltext"])
+# data["text"] = preprocess_text(data["fulltext"])
 
 ## Encode labels
 # Load label encoder
-data = data.rename(columns={"completion" : "labels"})
+# data = data.rename(columns={"completion" : "labels"})
 
 ## Original Model
 # Load label encoder
@@ -57,36 +59,37 @@ model = "roberta"
 roberta_model = ClassificationModel(model, model_location)
 
 # Predict the labels
-predictions, raw_outputs = roberta_model.predict(list(data.text.astype(str)))
+texts = data.loc[data.DATASET=="GPT3-generated", "text"].astype(str).tolist()
+predictions, logits = roberta_model.predict(texts)
 
-data['cards_original_pred'] = le.inverse_transform(predictions)
-data['cards_pred'] = data["cards_original_pred"].apply(lambda pred: 0 if pred=="0_0" else 1)
-data['cards_proba'] = [softmax(element[0]) for element in raw_outputs]
+data.loc[data.DATASET=="GPT3-generated", 'cards_pred'] = le.inverse_transform(predictions)
+# data['cards_pred'] = data["cards_original_pred"].apply(lambda pred: 0 if pred=="0_0" else 1)
+data.loc[data.DATASET=="GPT3-generated", 'cards_proba'] = [str(softmax(element[0]).tolist()) for element in logits]
 
-## Waterloo Model
-# Load Model
-model_location = "models/waterloo"
-model = "roberta"
-roberta_model = ClassificationModel(model, model_location)
+# ## Waterloo Model
+# # Load Model
+# model_location = "models/waterloo"
+# model = "roberta"
+# roberta_model = ClassificationModel(model, model_location)
+
+# # Predict the labels
+# predictions, raw_outputs = roberta_model.predict(list(data.text.astype(str)))
+
+# data['waterloo_pred'] = predictions
+# data['waterloo_proba'] = [softmax(element[0]) for element in raw_outputs]
+
+
+# ## Waterloo-CARDS Model
+# # Load Model
+# model_location = "models/waterloo-cards"
+# model = "roberta"
+# roberta_model = ClassificationModel(model, model_location)
 
 # Predict the labels
-predictions, raw_outputs = roberta_model.predict(list(data.text.astype(str)))
+# predictions, raw_outputs = roberta_model.predict(list(data.text.astype(str)))
 
-data['waterloo_pred'] = predictions
-data['waterloo_proba'] = [softmax(element[0]) for element in raw_outputs]
+# data['waterloo-cards_pred'] = predictions
+# data['waterloo-cards_proba'] = [softmax(element[0]) for element in raw_outputs]
 
-
-## Waterloo-CARDS Model
-# Load Model
-model_location = "models/waterloo-cards"
-model = "roberta"
-roberta_model = ClassificationModel(model, model_location)
-
-# Predict the labels
-predictions, raw_outputs = roberta_model.predict(list(data.text.astype(str)))
-
-data['waterloo-cards_pred'] = predictions
-data['waterloo-cards_proba'] = [softmax(element[0]) for element in raw_outputs]
-
-data.to_csv("datasets/hamburg_1000_sample.csv", index=False)
+data.to_csv(FILE, index=False)
 
