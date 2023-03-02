@@ -12,3 +12,6 @@ wandb/*
 */wandb/*
 new_training/runs/*
 logical-fallacy/*
+archive/*
+CTTs/*
+Twitter_scrapped/*

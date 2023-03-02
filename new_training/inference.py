@@ -30,12 +30,10 @@ MODEL_NAME = os.path.basename(training_args.output_dir)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-
 print("Loading model: {}".format(model_dir))
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 model = AutoModelForSequenceClassification.from_pretrained(model_dir)
 model.to(device)
-
 
 data = pd.read_csv(data_args.data_dir, low_memory=False)
 dataset = ClaimsData(data, tokenizer=tokenizer, max_len=MAX_LEN, device=device, eval=True)
