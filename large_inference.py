@@ -38,8 +38,8 @@ architecture = 'roberta'
 model_name = "cards/models/CARDS_RoBERTa_Classifier"
 
 # Load the classifier
-model = ClassificationModel(architecture, model_name)
-model.args.silent = True
+roberta_model = ClassificationModel(architecture, model_name)
+roberta_model.args.silent = True
 
 with open("datasets/predictions", "rb") as f:
     f.seek(-2, os.SEEK_END)
@@ -90,7 +90,7 @@ dataloader = DataLoader(dataset, batch_size = 2000)
 with open("datasets/predictions", "a") as f:
 
     for ids, texts in tqdm(dataloader, initial=last_line//2000):
-        predictions_batch, raw_outputs_batch = model.predict(texts)
+        predictions_batch, raw_outputs_batch = roberta_model.predict(texts)
         predictions_decoded = le.inverse_transform(predictions_batch).tolist()
         scores_batch = [max(softmax(element[0])) for element in raw_outputs_batch]
 

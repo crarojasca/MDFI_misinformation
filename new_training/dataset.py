@@ -17,7 +17,7 @@ class ClaimsData(Dataset):
     def __getitem__(self, index):
         """Get the sample indexed from the dataset"""
 
-        text = str(self.data.loc[index, "prompt"])
+        text = str(self.data.loc[index, "text"])
         
         ## Preprocessing
         text = denoise_text(text)
