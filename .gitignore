@@ -10,8 +10,5 @@ experiments/*
 models/*
 wandb/*
 */wandb/*
-new_training/runs/*
+binary_classification/runs/*
 logical-fallacy/*
-archive/*
-CTTs/*
-Twitter_scrapped/*
