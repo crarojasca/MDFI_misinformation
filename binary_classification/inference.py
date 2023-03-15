@@ -21,7 +21,7 @@ model_dir = Path(training_args.output_dir).joinpath(model_args.save_name)
 
 
 MAX_LEN = 256
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 MODEL_NAME = os.path.basename(training_args.output_dir)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -54,10 +54,10 @@ for batch in tqdm(dataloader):
     predictions += prediction.tolist()
     scores += score.tolist()
 
-# data[f"{MODEL_NAME}_pred"] = predictions
-# data[f"{MODEL_NAME}_proba"] = scores
+data[f"{MODEL_NAME}_pred"] = predictions
+data[f"{MODEL_NAME}_proba"] = scores
 
-data.loc[data.DATASET=="GPT3-generated", f"{MODEL_NAME}_pred_parallel"] = predictions
-data.loc[data.DATASET=="GPT3-generated", f"{MODEL_NAME}_proba_parallel"] = [str(s) for s in scores]
+# data.loc[data.DATASET=="GPT3-generated", f"{MODEL_NAME}_pred_parallel"] = predictions
+# data.loc[data.DATASET=="GPT3-generated", f"{MODEL_NAME}_proba_parallel"] = [str(s) for s in scores]
 
 data.to_csv(data_args.data_dir, index=False)

@@ -1,3 +1,6 @@
+import pickle
+from torch.nn.functional import one_hot
+from sklearn.preprocessing import LabelEncoder
 from utils import denoise_text
 
 import torch
@@ -36,6 +39,25 @@ class ClaimsData(Dataset):
 
         return tokenized_text
     
+
+class TaxonomyData(ClaimsData):
+    def __init__(self, dataframe, tokenizer, max_len, num_classes, device, eval=False):
+        ClaimsData.__init__(self, dataframe, tokenizer, max_len, device, eval)
+
+        self.num_classes = num_classes
+        with open('../cards/models/label_encoder.pkl', 'rb') as f:
+            self.le = pickle.load(f)
+
+    def __getitem__(self, index):
+        """Get the sample indexed from the dataset"""
+
+        tokenized_text = ClaimsData.__getitem__(self, index)
+
+        if not self.eval:
+            label = self.data.loc[index, "claim"]
+            tokenized_text["label"] = one_hot(torch.tensor(self.le.transform([label])[0]-1), self.num_classes).float()
+
+        return tokenized_text
 
 class FileDataset(IterableDataset):
     def __init__(self, data_file, tokenizer, max_len, device, initial_pointer=0):
