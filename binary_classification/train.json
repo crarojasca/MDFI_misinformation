@@ -24,11 +24,11 @@
     "logging_steps": 150,
     "fp16": false,
     "gradient_accumulation_steps": 2,
-    "num_train_epochs": 5, 
+    "num_train_epochs": 10, 
     "seed": 42,
     "warmup_steps": 1931,
     "learning_rate": 1e-05,
     "problem_type": "multi_label_classification",
-    "cache_dir": "/home/crojasca/qe26/MDFI_misinformation/.cache/huggingface/datasets",
+    "cache_dir": "../.cache/huggingface/datasets",
     "report_to": "wandb"
 }
