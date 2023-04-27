@@ -23,3 +23,5 @@ cards_augmented/models/*
 cards_augmented/cache_dir/*
 cards_augmented/wandb/*
 cards_augmented/runs/*
+archive/*
+
