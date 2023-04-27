@@ -12,8 +12,16 @@ wandb/*
 */wandb/*
 binary_classification/runs/*
 logical-fallacy/*
+CTTs/*
+SimCSE/*
+Twitter_scrapped/*
+Twitter/@Twitter_Denials_predictions_samples.csv
+cards/*
+logical_fallacy/*
+openai-cookbook/*
 cards_augmented/models/*
 cards_augmented/cache_dir/*
 cards_augmented/wandb/*
 cards_augmented/runs/*
 archive/*
+
