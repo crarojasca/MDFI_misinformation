@@ -1,5 +1,4 @@
 # Importing the libraries needed
-import pickle
 import pandas as pd
 import numpy as np
 from torch import nn
@@ -19,7 +18,8 @@ import json
 from tqdm import tqdm
 from pathlib import Path
 
-from dataset import TaxonomyData
+from dataset import ClaimsData, TaxonomyData
+from metrics import compute_metrics
 from arguments import (
     ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments
 )
@@ -36,9 +36,10 @@ LEARNING_RATE = 1e-05
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+config_file = "train_hcards_5.3.json"
 ## Loading Components
 parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments))
-model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file="train.json")
+model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file=config_file)
 
 print( model_args.model_name)
 config = AutoConfig.from_pretrained(
@@ -62,9 +63,10 @@ model = AutoModelForSequenceClassification.from_pretrained(
 model.to(device)
 model.train()
 
-FILE = "../MDFI_misinformation/datasets/augmented/9834838408490912248/cards_augmented_50_V4.csv"
 ## Reading data
-data = pd.read_csv(data_args.data_dir + FILE, low_memory=False)
+data = pd.read_csv(data_args.data_dir, low_memory=False)
+if "hcards_5.3" in data_args.data_dir or "hcards_complete" in data_args.data_dir:
+    data = data[(data.claim!="0_0")].copy(deep=True)
 
 # train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, device)
 # valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
@@ -72,7 +74,7 @@ data = pd.read_csv(data_args.data_dir + FILE, low_memory=False)
 
 train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 valid_dataset = TaxonomyData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
-# test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
+test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 
 # Training
 trainer = Trainer(
@@ -85,25 +87,26 @@ trainer = Trainer(
 )
 
 trainer.train()
+
 trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch'
 
 
-dataset = TaxonomyData(data, tokenizer, MAX_LEN, model_args.num_labels, device, eval=True)
-dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE, shuffle=False)
+# dataset = TaxonomyData(data, tokenizer, MAX_LEN, model_args.num_labels, device, eval=True)
+# dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE, shuffle=False)
 
-with open('../cards/models/label_encoder.pkl', 'rb') as f:
-    le = pickle.load(f)
+# with open('../cards/models/label_encoder.pkl', 'rb') as f:
+#     le = pickle.load(f)
 
-MODEL = "cards_aug"
-predictions = []
-scores = []
-for batch in tqdm(dataloader):
-    outputs = model(**batch)
-    score = outputs.logits.softmax(dim = 1)
-    prediction = torch.argmax(outputs.logits, axis=1)
-    predictions += le.inverse_transform(prediction.to('cpu')).tolist()
-    scores += [str(score.tolist())]
+# MODEL = "cards_aug"
+# predictions = []
+# scores = []
+# for batch in tqdm(dataloader):
+#     outputs = model(**batch)
+#     score = outputs.logits.softmax(dim = 1)
+#     prediction = torch.argmax(outputs.logits, axis=1)
+#     predictions += le.inverse_transform(prediction.to('cpu')).tolist()
+#     scores += [str(score.tolist())]
 
-data[f"{MODEL}_pred"] = predictions
-data[f"{MODEL}_proba"] = scores
-data.to_csv("cards_augmented_50_V4_new_pipe_new_loss.csv", index=False)
+# data[f"{MODEL}_pred"] = predictions
+# data[f"{MODEL}_proba"] = scores
+# data.to_csv("cards_augmented_50_V4_new_pipe_new_loss.csv", index=False)

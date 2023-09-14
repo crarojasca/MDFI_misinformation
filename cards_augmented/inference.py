@@ -21,6 +21,7 @@ model_args, data_args, eval_args, training_args = parser.parse_json_file(json_fi
 model_dir = Path(training_args.output_dir).joinpath(model_args.save_name)
 
 
+
 MAX_LEN = 256
 BATCH_SIZE = 4
 # MODEL_NAME = os.path.basename(training_args.output_dir)
@@ -43,6 +44,7 @@ data = pd.read_csv(DIR + FILE, low_memory=False)
 
 dataset = ClaimsData(data, tokenizer=tokenizer, max_len=MAX_LEN, device=device, eval=True)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
+
 
 with open('label_encoder_second_level.pkl', 'rb') as f:
     le = pickle.load(f)
