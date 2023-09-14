@@ -35,9 +35,10 @@ LEARNING_RATE = 1e-05
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+config_file = "train_hcards_5.3.json"
 ## Loading Components
 parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments))
-model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file="train.json")
+model_args, data_args, eval_args, training_args = parser.parse_json_file(json_file=config_file)
 
 print( model_args.model_name)
 config = AutoConfig.from_pretrained(
@@ -63,7 +64,8 @@ model.train()
 
 ## Reading data
 data = pd.read_csv(data_args.data_dir, low_memory=False)
-data = data[(data.DATASET=="cards")&(data.claim!="0_0")].copy(deep=True)
+if "hcards_5.3" in data_args.data_dir or "hcards_complete" in data_args.data_dir:
+    data = data[(data.claim!="0_0")].copy(deep=True)
 
 # train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, device)
 # valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
