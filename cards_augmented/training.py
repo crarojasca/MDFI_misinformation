@@ -2,6 +2,7 @@
 import pickle
 import pandas as pd
 import numpy as np
+from torch import nn
 from transformers import RobertaModel, RobertaTokenizer
 
 import torch
@@ -61,7 +62,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
 model.to(device)
 model.train()
 
-FILE = "cards_augmented_0_V1.csv"
+FILE = "../MDFI_misinformation/datasets/augmented/9834838408490912248/cards_augmented_50_V4.csv"
 ## Reading data
 data = pd.read_csv(data_args.data_dir + FILE, low_memory=False)
 
@@ -69,10 +70,9 @@ data = pd.read_csv(data_args.data_dir + FILE, low_memory=False)
 # valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
 # test_dataset = ClaimsData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, device)
 
-train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index()   , tokenizer, MAX_LEN, model_args.num_labels, device)
+train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 valid_dataset = TaxonomyData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 # test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
-
 
 # Training
 trainer = Trainer(
@@ -106,4 +106,4 @@ for batch in tqdm(dataloader):
 
 data[f"{MODEL}_pred"] = predictions
 data[f"{MODEL}_proba"] = scores
-data.to_csv(FILE + "cards_augmented_0_V1_new_pipe.csv", index=False)
+data.to_csv("cards_augmented_50_V4_new_pipe_new_loss.csv", index=False)

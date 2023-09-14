@@ -9,15 +9,15 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # FILES
 ## Input File
-DATA_FILE = "../datasets/omm_export_tweets_01-06-2022.csv" ## Hamburg
+DATA_FILE = "../datasets/hamburg/omm_export_tweets_misinfo.csv" ## Hamburg
 
 ## Output File
-PREDICTIONS_FILE = "../datasets/hamburg_aug_xlnet_predictions.txt"
+PREDICTIONS_FILE = "../datasets/hamburg_secondlvl_predictions.txt"
 
 MAX_LEN = 256
 BATCH_SIZE = 8
-MODEL_NAME = "aug_xlnet"
-MODEL_DIR = "experiments/results/aug_xlnet/best-epoch"
+MODEL_NAME = "secondlvl"
+MODEL_DIR = "../cards_augmented/models/9834838408490912248/cards_second_level_0_"
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -45,10 +45,12 @@ model, dataloader = accelerator.prepare(
 with open(PREDICTIONS_FILE, "a") as f:
 
     for batch in tqdm(dataloader, initial=last_line//2000):
+        ids = batch["id"].tolist()
+        batch.pop("id")
         outputs = model(**batch)
         prediction = torch.argmax(outputs.logits, axis=1).tolist()
         scores = outputs.logits.softmax(dim = 1).tolist()
-        ids = batch["id"].tolist()
+        
         
         preds_batch = ["|".join(map(str, pred)) for pred in zip(ids, prediction, scores)]
         preds_batch = "\n".join(preds_batch) + "\n"

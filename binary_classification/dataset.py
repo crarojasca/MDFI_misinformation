@@ -41,12 +41,12 @@ class ClaimsData(Dataset):
     
 
 class TaxonomyData(ClaimsData):
-    def __init__(self, dataframe, tokenizer, max_len, num_classes, device, eval=False):
+    def __init__(self, dataframe, tokenizer, max_len, num_classes, label_encoder, device, eval=False):
         ClaimsData.__init__(self, dataframe, tokenizer, max_len, device, eval)
 
         self.num_classes = num_classes
-        with open('../cards/models/label_encoder.pkl', 'rb') as f:
-            self.le = pickle.load(f)
+        self.le = label_encoder
+        
 
     def __getitem__(self, index):
         """Get the sample indexed from the dataset"""
@@ -55,7 +55,7 @@ class TaxonomyData(ClaimsData):
 
         if not self.eval:
             label = self.data.loc[index, "claim"]
-            tokenized_text["label"] = one_hot(torch.tensor(self.le.transform([label])[0]-1), self.num_classes).float()
+            tokenized_text["label"] = one_hot(torch.tensor(self.le.transform([label])[0]), self.num_classes).float()
 
         return tokenized_text
 

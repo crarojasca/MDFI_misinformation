@@ -2,8 +2,8 @@
     "tokenizer_name": "roberta-large",
     "model_name": "roberta-large",
     "save_name": "best-epoch",
-    "output_dir": "experiments/results/pos_roberta", 
-    "logging_dir": "experiments/results/logs/pos_roberta",
+    "output_dir": "experiments/results/roberta", 
+    "logging_dir": "experiments/results/logs/roberta",
     "data_dir": "../datasets/augmented/9834838408490912248/",
     "freeze_encoder": false, 
     "freeze_embeds": false,    
@@ -11,7 +11,7 @@
     "task_type": "sequence_matching",
     "mode": "train",
     "test_type": "dev",
-    "num_labels":18,
+    "num_labels":2,
     "do_train": true,
     "evaluation_strategy": "steps", 
     "overwrite_output_dir": true,
@@ -27,7 +27,7 @@
     "num_train_epochs": 3, 
     "seed": 3782740472,
     "learning_rate": 1e-05,
-    "problem_type": "multi_label_classification",
+    "problem_type": "label_classification",
     "cache_dir": "../.cache/huggingface/datasets",
     "report_to": "wandb"
 }
