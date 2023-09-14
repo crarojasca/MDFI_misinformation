@@ -57,14 +57,13 @@ def denoise_text(text):
     text = remove_multiple_spaces(text)
     return text.strip()
 
-# Load label encoder
-with open('../cards/models/label_encoder.pkl', 'rb') as f:
-    le = pickle.load(f)
+# # Load label encoder
+# with open('../cards/models/label_encoder.pkl', 'rb') as f:
+#     le = pickle.load(f)
 
-samples = 50
-VERSION = "V4"
-augment = True
-V2 = False
+samples = 0
+VERSION = ""
+augment = False
 
 # Load and pre-process the text data
 # Load the data
@@ -83,40 +82,27 @@ data = pd.concat([train, valid, test], ignore_index=True)
 data["DATASET"] = "cards"
 
 
+# # Load augmented Data and format it
+# augmented = pd.read_csv('../datasets/generated_disinformation/taxonomy/GPT-4_V3.csv')
+# augmented = augmented.rename(columns={"generated_label": "claim"})
+# augmented["DATASET"] = "GPT-4 (2)"
 
-# Load augmented Data and format it
-augmented = pd.read_csv('../datasets/generated_disinformation_taxonomy_CARDS_GPT-4_specific_samples_V1.csv')
-augmented = augmented.rename(columns={"generated_label": "claim"})
+# sampled_augmented = pd.DataFrame()
+# if augment:
+#     for claim in augmented.claim.unique():
+#         tmp = augmented[(augmented.claim==claim)].iloc[:samples, :]
+#         sampled_augmented = pd.concat([sampled_augmented, tmp], ignore_index=True)
 
-augmentedv2 = pd.read_csv('../datasets/generated_disinformation_taxonomy_CARDS_CHATGPT_specific_samples_V2.csv')
-augmentedv2 = augmentedv2.rename(columns={"generated_label": "claim"})
-v2claims = augmentedv2.claim.unique()
-print(v2claims)
-
-sampled_augmented = pd.DataFrame()
-if augment:
-    for claim in augmented.claim.unique():
-
-    # for claim in ['1_1', '1_2', '2_1', '4_4', '5_2']: 
-        if claim in v2claims and V2:
-            tmp = augmentedv2[(augmentedv2.claim==claim)].iloc[:samples, :]
-            tmp["DATASET"] = "generated-chatgptV2"
-        else:
-            tmp = augmented[(augmented.claim==claim)].iloc[:samples, :]
-            tmp["DATASET"] = "generated-chatgpt"
-
-        sampled_augmented = pd.concat([sampled_augmented, tmp], ignore_index=True)
-
-
-sampled_augmented["PARTITION"] = "TRAIN"
-
-data = pd.concat([data, sampled_augmented], ignore_index=True)
+# data = pd.concat([data, sampled_augmented], ignore_index=True)
 
 # Pre-process the text
 data['text'] = data['text'].astype(str).apply(denoise_text)
 
 # Encode the labels
+le = LabelEncoder()
 data['labels'] = le.fit_transform(data.claim)
+
+
 
 print(data.groupby(["claim", "DATASET"]).text.count())
 print(data.groupby(["PARTITION", "DATASET"]).text.count())
@@ -134,7 +120,7 @@ weights = compute_class_weight(
 )
 weights = [*weights]
 print(weights)
-# print(torch.initial_seed())
+
 # seed 0 400
 #                       V1_0  V1_50 V2_50 V2_400
 # 2891285791441657046   76.04       77.14 75.39
@@ -144,17 +130,19 @@ print(weights)
 # Create a ClassificationModel
 
 for seed in [9834838408490912248]:
+
+
     PATH = f"../datasets/augmented/{seed}/"
     os.system(f"mkdir {PATH}")
-    FILE = PATH + f"cards_augmented_{samples}_{VERSION}_SimCSE_base.csv"
-    MODEL = "cards_aug"
-    model = ClassificationModel('roberta', '../SimCSE/models/', 
-                                num_labels = 18, weight = weights,
+    FILE = PATH + f"cards_augmented_{samples}_{VERSION}.csv"
+    MODEL = "cards_second_level"
+    model = ClassificationModel('roberta', 'roberta-large', 
+                                num_labels = 2, weight = weights,
                                 args={"manual_seed":seed % 2**32,
                                     'reprocess_input_data': True, 
                                     'overwrite_output_dir': False,
-                                    'output_dir': f'models/{seed}/{MODEL}_{samples}_{VERSION}_SimCSE_base',
-                                    'best_model_dir': f'models/{seed}/{MODEL}_{samples}_{VERSION}_SimCSE_base/best_model/',
+                                    'output_dir': f'models/{seed}/{MODEL}_{samples}_{VERSION}',
+                                    'best_model_dir': f'models/{seed}/{MODEL}_{samples}_{VERSION}/best_model/',
                                     # Hyperparameters
                                     'train_batch_size': 6,
                                     'num_train_epochs': 3, 
@@ -181,6 +169,9 @@ for seed in [9834838408490912248]:
                     f1_weighted = f1_multiclass_weighted, 
                     acc = accuracy_score, 
                     f1_class = f1_class)
+
+    with open('label_encoder_second_level.pkl', 'wb') as f:
+        pickle.dump(le, f)
 
     # model = ClassificationModel("roberta", f'models/{MODEL}{VERSION}/best_model/')
     # Predict the labels

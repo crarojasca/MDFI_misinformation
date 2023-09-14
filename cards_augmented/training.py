@@ -1,6 +1,7 @@
 # Importing the libraries needed
 import pandas as pd
 import numpy as np
+from torch import nn
 from transformers import RobertaModel, RobertaTokenizer
 
 import torch
@@ -75,7 +76,6 @@ train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index(), t
 valid_dataset = TaxonomyData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 
-
 # Training
 trainer = Trainer(
         model=model,
@@ -87,4 +87,26 @@ trainer = Trainer(
 )
 
 trainer.train()
-trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch
+
+trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch'
+
+
+# dataset = TaxonomyData(data, tokenizer, MAX_LEN, model_args.num_labels, device, eval=True)
+# dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE, shuffle=False)
+
+# with open('../cards/models/label_encoder.pkl', 'rb') as f:
+#     le = pickle.load(f)
+
+# MODEL = "cards_aug"
+# predictions = []
+# scores = []
+# for batch in tqdm(dataloader):
+#     outputs = model(**batch)
+#     score = outputs.logits.softmax(dim = 1)
+#     prediction = torch.argmax(outputs.logits, axis=1)
+#     predictions += le.inverse_transform(prediction.to('cpu')).tolist()
+#     scores += [str(score.tolist())]
+
+# data[f"{MODEL}_pred"] = predictions
+# data[f"{MODEL}_proba"] = scores
+# data.to_csv("cards_augmented_50_V4_new_pipe_new_loss.csv", index=False)
