@@ -55,7 +55,7 @@ class TaxonomyData(ClaimsData):
 
         if not self.eval:
             label = self.data.loc[index, "claim"]
-            tokenized_text["label"] = one_hot(torch.tensor(self.le.transform([label])[0]), self.num_classes).float()
+            tokenized_text["label"] = one_hot(torch.tensor(self.le.transform([label])[0]-1), self.num_classes).float()
 
         return tokenized_text
 

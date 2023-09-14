@@ -1,5 +1,4 @@
 # Importing the libraries needed
-import pickle
 import pandas as pd
 import numpy as np
 from transformers import RobertaModel, RobertaTokenizer
@@ -18,10 +17,8 @@ import json
 from tqdm import tqdm
 from pathlib import Path
 
-from sklearn.preprocessing import LabelEncoder
-
-
-from dataset import TaxonomyData
+from dataset import ClaimsData, TaxonomyData
+from metrics import compute_metrics
 from arguments import (
     ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments
 )
@@ -64,26 +61,17 @@ model = AutoModelForSequenceClassification.from_pretrained(
 model.to(device)
 model.train()
 
-FILE = "cards_augmented_0_V1.csv"
 ## Reading data
-data = pd.read_csv(data_args.data_dir + FILE, low_memory=False)
-data = data[data.claim!="0_0"]
-
-with open('../cards/models/label_encoder.pkl', 'rb') as f:
-    le = pickle.load(f)
-
-le = LabelEncoder()
-le.fit(data["claim"])
+data = pd.read_csv(data_args.data_dir, low_memory=False)
+data = data[(data.DATASET=="cards")&(data.claim!="0_0")].copy(deep=True)
 
 # train_dataset = ClaimsData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, device)
 # valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
 # test_dataset = ClaimsData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, device)
 
-train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index(), 
-                             tokenizer, MAX_LEN, model_args.num_labels, le, device)
-valid_dataset = TaxonomyData(data[data["PARTITION"] == "VALID"].reset_index(), 
-                             tokenizer, MAX_LEN, model_args.num_labels, le, device)
-# test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
+train_dataset = TaxonomyData(data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
+valid_dataset = TaxonomyData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
+test_dataset = TaxonomyData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
 
 
 # Training
@@ -97,23 +85,4 @@ trainer = Trainer(
 )
 
 trainer.train()
-trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch'
-
-
-dataset = TaxonomyData(data, tokenizer, MAX_LEN, model_args.num_labels, le, device, eval=True)
-dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE, shuffle=False)
-
-
-MODEL = "cards_aug"
-predictions = []
-scores = []
-for batch in tqdm(dataloader):
-    outputs = model(**batch)
-    score = outputs.logits.softmax(dim = 1)
-    prediction = torch.argmax(outputs.logits, axis=1)
-    predictions += le.inverse_transform(prediction.to('cpu')).tolist()
-    scores += [str(score.tolist())]
-
-data[f"{MODEL}_pred"] = predictions
-data[f"{MODEL}_proba"] = scores
-data.to_csv("../datasets/cards_second_hierarchy.csv", index=False)
+trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch
