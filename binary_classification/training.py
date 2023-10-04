@@ -18,7 +18,7 @@ import json
 from tqdm import tqdm
 from pathlib import Path
 
-from dataset import ClaimsData, TaxonomyData
+from dataset import BinaryDataset, TaxonomyData
 from metrics import compute_metrics
 from arguments import (
     ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments
@@ -34,7 +34,21 @@ TEST_BATCH_SIZE = 8
 # EPOCHS = 1
 LEARNING_RATE = 1e-05
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+MODEL_NAME = "waterloo_cards"
+
+
+################################## set device ##################################
+print("============================================================================================")
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
+print("============================================================================================")
+
 
 ## Loading Components
 parser = HfArgumentParser((ModelArguments, DataTrainingArguments, EvalArguments, TrainingArguments))
@@ -53,17 +67,22 @@ tokenizer = AutoTokenizer.from_pretrained(
     return_tensors='tf', padding=True,
     # cache_dir=model_args.cache_dir,
 )
+# tokenizer.to(device)
 
 model = AutoModelForSequenceClassification.from_pretrained(
     model_args.model_name,
     config=config,
     # cache_dir=model_args.cache_dir,
 )
-model.to("cuda")
+model.to(device)
 model.train()
 
 ## Reading data
 data = pd.read_csv(data_args.data_dir, low_memory=False)
+
+print(data.groupby(["DATASET", "labels"])["text"].count())
+print(data["PARTITION"].value_counts())
+
 # data = data[data.DATASET=="cards"]
 # data = data[(data.DATASET=="cards")&(data.claim!="0_0")].copy(deep=True)
 
@@ -71,13 +90,24 @@ data = pd.read_csv(data_args.data_dir, low_memory=False)
 # valid_dataset = ClaimsData(data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, device)
 # test_dataset = ClaimsData(data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, device)
 
-train_dataset = ClaimsData(
-    data[data["PARTITION"] == "TRAIN"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
-valid_dataset = ClaimsData(
-    data[data["PARTITION"] == "VALID"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
-test_dataset = ClaimsData(
-    data[data["PARTITION"] == "TEST"].reset_index(), tokenizer, MAX_LEN, model_args.num_labels, device)
+train_dataset = BinaryDataset(
+    dataframe=data[data["PARTITION"] == "TRAIN"].reset_index(), 
+    tokenizer=tokenizer, max_len=MAX_LEN, 
+    # num_classes=model_args.num_labels, 
+    device=device)
+valid_dataset = BinaryDataset(
+    data[data["PARTITION"] == "VALID"].reset_index(), 
+    tokenizer=tokenizer, max_len=MAX_LEN, 
+    # num_classes=model_args.num_labels, 
+    device=device)
+test_dataset = BinaryDataset(
+    data[data["PARTITION"] == "TEST"].reset_index(), 
+    tokenizer=tokenizer, max_len=MAX_LEN, 
+    # num_classes=model_args.num_labels, 
+    device=device)
 
+print(train_dataset[0].keys())
+print(valid_dataset[0].keys())
 
 # Training
 trainer = Trainer(
@@ -92,8 +122,8 @@ trainer = Trainer(
 trainer.train()
 trainer.save_model(Path(training_args.output_dir).joinpath(model_args.save_name)) #save best epoch
 
-MODEL_NAME = "binary_roberta"
-dataset = ClaimsData(data, tokenizer, MAX_LEN, model_args.num_labels, device)
+
+dataset = BinaryDataset(data, tokenizer, MAX_LEN, model_args.num_labels, device)
 # with open('../cards/models/label_encoder.pkl', 'rb') as f:
 #     le = pickle.load(f)
 

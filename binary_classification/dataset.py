@@ -6,7 +6,7 @@ from utils import denoise_text
 import torch
 from torch.utils.data import Dataset, DataLoader, IterableDataset
 
-class ClaimsData(Dataset):
+class BinaryDataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_len, device, eval=False):
         self.tokenizer = tokenizer
         self.data = dataframe
@@ -35,14 +35,14 @@ class ClaimsData(Dataset):
 
         if not self.eval:
             label = int(self.data.loc[index, "labels"])
-            tokenized_text["label"] = label
+            tokenized_text["labels"] = label
 
         return tokenized_text
     
 
-class TaxonomyData(ClaimsData):
+class TaxonomyData(BinaryDataset):
     def __init__(self, dataframe, tokenizer, max_len, num_classes, label_encoder, device, eval=False):
-        ClaimsData.__init__(self, dataframe, tokenizer, max_len, device, eval)
+        BinaryDataset.__init__(self, dataframe, tokenizer, max_len, device, eval)
 
         self.num_classes = num_classes
         self.le = label_encoder
@@ -51,7 +51,7 @@ class TaxonomyData(ClaimsData):
     def __getitem__(self, index):
         """Get the sample indexed from the dataset"""
 
-        tokenized_text = ClaimsData.__getitem__(self, index)
+        tokenized_text = BinaryDataset.__getitem__(self, index)
 
         if not self.eval:
             label = self.data.loc[index, "claim"]

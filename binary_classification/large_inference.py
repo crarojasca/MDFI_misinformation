@@ -12,12 +12,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 DATA_FILE = "../datasets/hamburg/omm_export_tweets_misinfo.csv" ## Hamburg
 
 ## Output File
-PREDICTIONS_FILE = "../datasets/hamburg_secondlvl_predictions.txt"
+PREDICTIONS_FILE = "../datasets/waterloo_cards_predictions_2.txt"
 
 MAX_LEN = 256
 BATCH_SIZE = 8
-MODEL_NAME = "secondlvl"
-MODEL_DIR = "../cards_augmented/models/9834838408490912248/cards_second_level_0_"
+MODEL_NAME = "waterloo_cards"
+MODEL_DIR = "model/waterloo_cards/best-epoch"
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
